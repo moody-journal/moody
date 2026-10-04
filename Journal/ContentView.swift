@@ -1,24 +1,39 @@
-//
-//  ContentView.swift
-//  Journal
-//
-//  Created by Aditya Raj Pundir on 13/5/26.
-//
-
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @State private var isAnalysing = false
+    @State private var progressDismissed = false
 
-#Preview {
-    ContentView()
+    var body: some View {
+        TabView {
+            JournalTab()
+                .tabItem {
+                    Label("Journal", systemImage: "book.closed")
+                }
+
+            MoodTab()
+                .tabItem {
+                    Label("Mood", systemImage: "chart.line.uptrend.xyaxis")
+                }
+
+            AwardsTab()
+                .tabItem {
+                    Label("Awards", systemImage: "medal")
+                }
+        }
+        .tint(.indigo)
+        .onPreferenceChange(AnalysisActivityPreferenceKey.self) { active in
+            isAnalysing = active
+            if !active { progressDismissed = false }
+        }
+        .overlay {
+            if isAnalysing && !progressDismissed {
+                AchievementProgressOverlay { progressDismissed = true }
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    .zIndex(1000)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: isAnalysing && !progressDismissed)
+    }
 }

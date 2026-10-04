@@ -1,0 +1,218 @@
+[
+  {
+    "type": "beganSomething",
+    "model": "New Beginnings Badge",
+    "view": "NewBeginningsBadge",
+    "asset": "Medal2D-beganSomething"
+  },
+  {
+    "type": "handledDifficulty",
+    "model": "Overcoming Difficulty Badge",
+    "view": "OvercomingDifficultyBadge",
+    "asset": "Medal2D-handledDifficulty"
+  },
+  {
+    "type": "practicedMindfulness",
+    "model": "Mindfulness Badge",
+    "view": "MindfulnessBadge",
+    "asset": "Medal2D-practicedMindfulness"
+  },
+  {
+    "type": "prioritisedSleep",
+    "model": "Rest Well Badge",
+    "view": "RestWellBadge",
+    "asset": "Medal2D-prioritisedSleep"
+  },
+  {
+    "type": "madeAmends",
+    "model": "Made Amends Badge",
+    "view": "MadeAmendsBadge",
+    "asset": "Medal2D-madeAmends"
+  },
+  {
+    "type": "connectedWithSomeone",
+    "model": "Made Connections Badge",
+    "view": "MadeConnectionsBadge",
+    "asset": "Medal2D-connectedWithSomeone"
+  },
+  {
+    "type": "askedForHelp",
+    "model": "Reached Out Badge",
+    "view": "ReachedOutBadge",
+    "asset": "Medal2D-askedForHelp"
+  },
+  {
+    "type": "finishedSomething",
+    "model": "Finished Tasks Badge",
+    "view": "FinishedTasksBadge",
+    "asset": "Medal2D-finishedSomething"
+  },
+  {
+    "type": "celebratedAWin",
+    "model": "Goal Achieved Badge",
+    "view": "GoalAchievedBadge",
+    "asset": "Medal2D-celebratedAWin"
+  },
+  {
+    "type": "steppedOutsideComfort",
+    "model": "Comfort Zone Badge",
+    "view": "ComfortZoneBadge",
+    "asset": "Medal2D-steppedOutsideComfort"
+  },
+  {
+    "type": "movedYourBody",
+    "model": "Stayed Active Badge",
+    "view": "StayedActiveBadge",
+    "asset": "Medal2D-movedYourBody"
+  },
+  {
+    "type": "createdSomething",
+    "model": "Created Something Badge",
+    "view": "CreatedSomethingBadge",
+    "asset": "Medal2D-createdSomething"
+  },
+  {
+    "type": "helpedOthers",
+    "model": "Helped Others Badge",
+    "view": "HelpedOthersBadge",
+    "asset": "Medal2D-helpedOthers"
+  },
+  {
+    "type": "ateWell",
+    "model": "Nourished Yourself Badge",
+    "view": "NourishedYourselfBadge",
+    "asset": "Medal2D-ateWell"
+  },
+  {
+    "type": "reachedOutFirst",
+    "model": "Reached Out First Badge",
+    "view": "ReachedOutFirstBadge",
+    "asset": "Medal2D-reachedOutFirst"
+  },
+  {
+    "type": "learnedSomethingNew",
+    "model": "Fed Curiosity Badge",
+    "view": "FedCuriosityBadge",
+    "asset": "Medal2D-learnedSomethingNew"
+  },
+  {
+    "type": "spentTimeInNature",
+    "model": "Touched Grass Badge",
+    "view": "TouchedGrassBadge",
+    "asset": "Medal2D-spentTimeInNature"
+  },
+  {
+    "type": "disconnectedFromScreens",
+    "model": "Disconnected From Screens Badge",
+    "view": "DisconnectedFromScreensBadge",
+    "asset": "Medal2D-disconnectedFromScreens"
+  },
+  {
+    "type": "satWithUncertainty",
+    "model": "Sat With Uncertainty Badge",
+    "view": "SatWithUncertaintyBadge",
+    "asset": "Medal2D-satWithUncertainty"
+  },
+  {
+    "type": "restedWithoutGuilt",
+    "model": "Slept Without Guilt Badge",
+    "view": "SleptWithoutGuiltBadge",
+    "asset": "Medal2D-restedWithoutGuilt"
+  },
+  {
+    "type": "keptGoing",
+    "model": "Kept Going Badge",
+    "view": "KeptGoingBadge",
+    "asset": "Medal2D-keptGoing"
+  },
+  {
+    "type": "saidNo",
+    "model": "Said No Badge",
+    "view": "SaidNoBadge",
+    "asset": "Medal2D-saidNo"
+  },
+  {
+    "type": "setABoundary",
+    "model": "Set Boundaries Badge",
+    "view": "SetBoundariesBadge",
+    "asset": "Medal2D-setABoundary"
+  },
+  {
+    "type": "showedUpForYourself",
+    "model": "Showed Up For Yourself Badge",
+    "view": "ShowedUpForYourselfBadge",
+    "asset": "Medal2D-showedUpForYourself"
+  },
+  {
+    "type": "criedItOut",
+    "model": "Cried It Out Badge",
+    "view": "CriedItOutBadge",
+    "asset": "Medal2D-criedItOut"
+  },
+  {
+    "type": "sangInTheShower",
+    "model": "Sang In The Shower Badge",
+    "view": "SangInTheShowerBadge",
+    "asset": "Medal2D-sangInTheShower"
+  },
+  {
+    "type": "forgivingYourself",
+    "model": "Forgave Yourself Badge",
+    "view": "ForgivingYourselfBadge",
+    "asset": "Medal2D-forgivingYourself"
+  },
+  {
+    "type": "blewUpMicrowave",
+    "model": "Blew Up A Microwave Badge",
+    "view": "BlewUpMicrowaveBadge",
+    "asset": "Medal2D-blewUpMicrowave"
+  },
+  {
+    "type": "heroicNapper",
+    "model": "Heroic Napper Badge",
+    "view": "HeroicNapperBadge",
+    "asset": "Medal2D-heroicNapper"
+  },
+  {
+    "type": "doomScrolled",
+    "model": "Doomscrolled Badge",
+    "view": "DoomScrolledBadge",
+    "asset": "Medal2D-doomScrolled"
+  },
+  {
+    "type": "lostASock",
+    "model": "Lost A Sock Badge",
+    "view": "LostASockBadge",
+    "asset": "Medal2D-lostASock"
+  },
+  {
+    "type": "breakfastPizza",
+    "model": "Breakfast Pizza Badge",
+    "view": "BreakfastPizzaBadge",
+    "asset": "Medal2D-breakfastPizza"
+  },
+  {
+    "type": "autocorrectDisaster",
+    "model": "Autocorrect Disaster Badge",
+    "view": "AutocorrectDisasterBadge",
+    "asset": "Medal2D-autocorrectDisaster"
+  },
+  {
+    "type": "rememberedADream",
+    "model": "Remembered A Dream",
+    "view": "RememberedADreamBadge",
+    "asset": "Medal2D-rememberedADream"
+  },
+  {
+    "type": "guessedTimeCorrectly",
+    "model": "Guessed The Time Correctly Badge",
+    "view": "GuessedTimeCorrectlyBadge",
+    "asset": "Medal2D-guessedTimeCorrectly"
+  },
+  {
+    "type": "droppedPhoneOnFace",
+    "model": "Dropped Phone On Face Badge",
+    "view": "DroppedPhoneOnFaceBadge",
+    "asset": "Medal2D-droppedPhoneOnFace"
+  }
+]

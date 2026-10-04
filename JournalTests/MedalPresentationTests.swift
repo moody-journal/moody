@@ -1,0 +1,114 @@
+import XCTest
+import SceneKit
+import AVFoundation
+import SwiftUI
+@testable import Journal
+
+@MainActor
+final class MedalPresentationTests: XCTestCase {
+    func testAllThirtySixUSDZMedalsResolveAndLoad() throws {
+        let names = ["Autocorrect Disaster Badge", "Blew Up A Microwave Badge", "Breakfast Pizza Badge", "Comfort Zone Badge", "Created Something Badge", "Cried It Out Badge", "Disconnected From Screens Badge", "Doomscrolled Badge", "Dropped Phone On Face Badge", "Fed Curiosity Badge", "Finished Tasks Badge", "Forgave Yourself Badge", "Goal Achieved Badge", "Guessed The Time Correctly Badge", "Helped Others Badge", "Heroic Napper Badge", "Kept Going Badge", "Lost A Sock Badge", "Made Amends Badge", "Made Connections Badge", "Mindfulness Badge", "New Beginnings Badge", "Nourished Yourself Badge", "Overcoming Difficulty Badge", "Reached Out Badge", "Reached Out First Badge", "Remembered A Dream", "Rest Well Badge", "Said No Badge", "Sang In The Shower Badge", "Sat With Uncertainty Badge", "Set Boundaries Badge", "Showed Up For Yourself Badge", "Slept Without Guilt Badge", "Stayed Active Badge", "Touched Grass Badge"]
+        XCTAssertEqual(names.count, AwardType.allCases.count)
+        for name in names {
+            let url = try XCTUnwrap(MedalAppearance.resourceURL(named: name), "Missing model: \(name)")
+            let scene = try SCNScene(url: url)
+            var geometryCount = 0
+            scene.rootNode.enumerateChildNodes { node, _ in
+                if let geometry = node.geometry {
+                    geometryCount += 1
+                    XCTAssertFalse(geometry.materials.isEmpty, name)
+                }
+            }
+            XCTAssertGreaterThan(geometryCount, 0, name)
+        }
+    }
+
+    func testAllMedalIconsAreBundledWithTransparentMargins() throws {
+        let names = [
+            "Medal2D-beganSomething",
+            "Medal2D-handledDifficulty",
+            "Medal2D-practicedMindfulness",
+            "Medal2D-prioritisedSleep",
+            "Medal2D-madeAmends",
+            "Medal2D-connectedWithSomeone",
+            "Medal2D-askedForHelp",
+            "Medal2D-finishedSomething",
+            "Medal2D-celebratedAWin",
+            "Medal2D-steppedOutsideComfort",
+            "Medal2D-movedYourBody",
+            "Medal2D-createdSomething",
+            "Medal2D-helpedOthers",
+            "Medal2D-ateWell",
+            "Medal2D-reachedOutFirst",
+            "Medal2D-learnedSomethingNew",
+            "Medal2D-spentTimeInNature",
+            "Medal2D-disconnectedFromScreens",
+            "Medal2D-satWithUncertainty",
+            "Medal2D-restedWithoutGuilt",
+            "Medal2D-keptGoing",
+            "Medal2D-saidNo",
+            "Medal2D-setABoundary",
+            "Medal2D-showedUpForYourself",
+            "Medal2D-criedItOut",
+            "Medal2D-sangInTheShower",
+            "Medal2D-forgivingYourself",
+            "Medal2D-blewUpMicrowave",
+            "Medal2D-heroicNapper",
+            "Medal2D-doomScrolled",
+            "Medal2D-lostASock",
+            "Medal2D-breakfastPizza",
+            "Medal2D-autocorrectDisaster",
+            "Medal2D-rememberedADream",
+            "Medal2D-guessedTimeCorrectly",
+            "Medal2D-droppedPhoneOnFace"
+        ]
+        XCTAssertEqual(names.count, AwardType.allCases.count)
+        for name in names {
+            let image = try XCTUnwrap(UIImage(named: name), name)
+            let cgImage = try XCTUnwrap(image.cgImage, name)
+            XCTAssertEqual(cgImage.width, 512, name)
+            XCTAssertEqual(cgImage.height, 512, name)
+            var pixel = [UInt8](repeating: 0, count: 4)
+            let context = try XCTUnwrap(CGContext(data: &pixel, width: 1, height: 1, bitsPerComponent: 8,
+                bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            let corner = try XCTUnwrap(cgImage.cropping(to: CGRect(x: 0, y: 0, width: 1, height: 1)))
+            context.draw(corner, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+            XCTAssertEqual(pixel[3], 0, "Opaque background in \(name)")
+        }
+    }
+
+    func testChimeIsShortStereoAndDoesNotClip() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "MedalChime", withExtension: "wav"))
+        let file = try AVAudioFile(forReading: url)
+        XCTAssertEqual(file.processingFormat.channelCount, 2)
+        XCTAssertEqual(Double(file.length) / file.processingFormat.sampleRate, 1.9, accuracy: 0.01)
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)))
+        try file.read(into: buffer)
+        let channels = try XCTUnwrap(buffer.floatChannelData)
+        for channel in 0..<2 {
+            let peak = (0..<Int(buffer.frameLength)).map { abs(channels[channel][$0]) }.max() ?? 0
+            XCTAssertGreaterThan(peak, 0.1)
+            XCTAssertLessThan(peak, 0.7)
+            XCTAssertLessThan(abs(channels[channel][Int(buffer.frameLength) - 1]), 0.001)
+        }
+    }
+
+    func testCenteredProgressRendersAtPhoneSizes() throws {
+        for width in [320.0, 393.0] {
+            let renderer = ImageRenderer(content:
+                ZStack {
+                    LinearGradient(colors: [.black, .indigo.opacity(0.4)], startPoint: .top, endPoint: .bottom)
+                    AchievementProgressOverlay(onContinue: {})
+                }
+                .frame(width: width, height: 780)
+                .environment(\.colorScheme, .dark)
+            )
+            renderer.scale = 2
+            let image = try XCTUnwrap(renderer.uiImage)
+            XCTAssertEqual(image.size.width, width)
+            let path = FileManager.default.temporaryDirectory.appendingPathComponent("achievement-overlay-\(Int(width)).png")
+            try XCTUnwrap(image.pngData()).write(to: path)
+            print("OVERLAY_PREVIEW: \(path.path)")
+        }
+    }
+}
