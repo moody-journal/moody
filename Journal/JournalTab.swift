@@ -2545,16 +2545,27 @@ final class MiniAudioPlayer: ObservableObject {
     @Published var progress: Double = 0
 
     private var player: AVPlayer?
+    private var startTask: Task<Void, Never>?
     private var timeObserver: Any?
     private var itemObserver: NSKeyValueObservation?
 
     func toggle(url: URL) {
-        if isPlaying { pause() } else { play(url: url) }
+        if isPlaying || startTask != nil { pause() } else { play(url: url) }
     }
 
     private func play(url: URL) {
-        try? AVAudioSession.sharedInstance().setCategory(.playback)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        startTask?.cancel()
+        startTask = Task { [weak self] in
+            do {
+                try await AudioSessionController.shared.activate(category: .playback)
+                guard !Task.isCancelled, let self else { return }
+                self.startTask = nil
+                self.startPlayback(url: url)
+            } catch { if !Task.isCancelled { self?.startTask = nil } }
+        }
+    }
+
+    private func startPlayback(url: URL) {
 
         if player == nil {
             player = AVPlayer(url: url)
@@ -2581,11 +2592,15 @@ final class MiniAudioPlayer: ObservableObject {
     }
 
     private func pause() {
+        startTask?.cancel()
+        startTask = nil
         player?.pause()
         isPlaying = false
     }
 
     func stop() {
+        startTask?.cancel()
+        startTask = nil
         if let timeObserver { player?.removeTimeObserver(timeObserver) }
         timeObserver = nil
         NotificationCenter.default.removeObserver(self)
@@ -3085,11 +3100,13 @@ final class AudioRecorderController: NSObject, ObservableObject, AVAudioRecorder
             return
         }
         guard generation == startGeneration, !Task.isCancelled else { return }
-        let session = AVAudioSession.sharedInstance()
         do {
-            try session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
-            try session.setActive(true)
+            try await AudioSessionController.shared.activate(category: .playAndRecord, options: .defaultToSpeaker)
         } catch { errorMessage = error.localizedDescription; return }
+        guard generation == startGeneration, !Task.isCancelled else {
+            try? await AudioSessionController.shared.deactivate()
+            return
+        }
 
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -3131,7 +3148,7 @@ final class AudioRecorderController: NSObject, ObservableObject, AVAudioRecorder
         let data = try? Data(contentsOf: fileURL)
         try? FileManager.default.removeItem(at: fileURL)
         recorder = nil
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        Task { try? await AudioSessionController.shared.deactivate() }
         completion(data)
     }
 
@@ -3153,6 +3170,7 @@ final class AudioPlayerController: NSObject, ObservableObject, AVAudioPlayerDele
     @Published var waveform: [Float] = []
 
     private var player: AVAudioPlayer?
+    private var startTask: Task<Void, Never>?
     private var timer: Timer?
 
     func loadWaveform(from data: Data) {
@@ -3164,8 +3182,18 @@ final class AudioPlayerController: NSObject, ObservableObject, AVAudioPlayerDele
     }
 
     func play(data: Data) {
-        try? AVAudioSession.sharedInstance().setCategory(.playback)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        startTask?.cancel()
+        startTask = Task { [weak self] in
+            do {
+                try await AudioSessionController.shared.activate(category: .playback)
+                guard !Task.isCancelled, let self else { return }
+                self.startTask = nil
+                self.startPlayback(data: data)
+            } catch { if !Task.isCancelled { self?.startTask = nil } }
+        }
+    }
+
+    private func startPlayback(data: Data) {
         if player == nil { player = try? AVAudioPlayer(data: data) }
         player?.delegate = self
         player?.prepareToPlay()
@@ -3182,12 +3210,16 @@ final class AudioPlayerController: NSObject, ObservableObject, AVAudioPlayerDele
     }
 
     func pause() {
+        startTask?.cancel()
+        startTask = nil
         player?.pause()
         isPlaying = false
         timer?.invalidate()
     }
 
     func stop() {
+        startTask?.cancel()
+        startTask = nil
         player?.stop()
         player = nil
         progress = 0

@@ -184,7 +184,8 @@ struct MedalPresentationView: View {
                         LazyHStack(spacing: 12) {
                             ForEach(awards, id: \.id) { award in
                                 Medal3DSceneView(awardType: award.type,
-                                    medalShape: .deterministic(for: award.type), triggerSpinIn: false)
+                                    medalShape: .deterministic(for: award.type),
+                                    triggerSpinIn: award.id == awards.first?.id && arrived && !reduceMotion)
                                     .allowsHitTesting(false)
                                     .frame(width: itemWidth, height: 270)
                                     .visualEffect { content, proxy in
@@ -819,30 +820,37 @@ struct Medal3DSceneView: UIViewRepresentable {
 final class MedalSoundPlayer {
     private var player: AVAudioPlayer?
     private var didPlay = false
+    private var playbackTask: Task<Void, Never>?
 
     func prepare() {
         guard player == nil, !didPlay,
               let url = Bundle.main.url(forResource: "MedalChime", withExtension: "wav") else { return }
         do {
-            try AVAudioSession.sharedInstance().setCategory(.ambient, options: .mixWithOthers)
             let chime = try AVAudioPlayer(contentsOf: url)
             chime.volume = 0.65
-            chime.prepareToPlay()
             player = chime
         } catch { player = nil }
     }
 
-    /// One chime belongs to one presentation, never to a scrolling medal cell.
     func playChime() {
         guard !didPlay else { return }
         didPlay = true
-        do {
-            try AVAudioSession.sharedInstance().setActive(true)
-            player?.play()
-        } catch { player = nil }
+        playbackTask = Task { [weak self] in
+            do {
+                try await AudioSessionController.shared.activate(category: .ambient, options: .mixWithOthers)
+                guard !Task.isCancelled, let self else { return }
+                self.player?.prepareToPlay()
+                self.player?.play()
+            } catch { self?.player = nil }
+        }
     }
 
-    func stop() { player?.stop(); player = nil }
+    func stop() {
+        playbackTask?.cancel()
+        playbackTask = nil
+        player?.stop()
+        player = nil
+    }
 }
 
 // MARK: - Shelf Medal (compact, idle-spinning, draggable on Y axis)

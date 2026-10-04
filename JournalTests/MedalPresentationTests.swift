@@ -106,22 +106,37 @@ final class MedalPresentationTests: XCTestCase {
         }
     }
 
-    func testCenteredProgressRendersAtPhoneSizes() throws {
+    func testAudioSessionActivatesAndDeactivatesAsynchronously() async throws {
+        try await AudioSessionController.shared.activate(category: .ambient, options: .mixWithOthers)
+        try await AudioSessionController.shared.deactivate()
+    }
+
+    func testCenteredProgressRendersAtPhoneSizes() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previousKeyWindow = scene.windows.first(where: \.isKeyWindow)
+        defer { previousKeyWindow?.makeKey() }
         for width in [320.0, 393.0] {
-            let renderer = ImageRenderer(content:
-                ZStack {
-                    LinearGradient(colors: [.black, .indigo.opacity(0.4)], startPoint: .top, endPoint: .bottom)
-                    AchievementProgressOverlay(onContinue: {})
-                }
-                .frame(width: width, height: 780)
-                .environment(\.colorScheme, .dark)
-            )
-            renderer.scale = 2
-            let image = try XCTUnwrap(renderer.uiImage)
+            let content = ZStack {
+                LinearGradient(colors: [.black, .indigo.opacity(0.4)], startPoint: .top, endPoint: .bottom)
+                AchievementProgressOverlay(onContinue: {})
+            }.environment(\.colorScheme, .dark)
+            let controller = UIHostingController(rootView: content)
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 780)
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.frame = window.bounds
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(300))
+            let renderer = UIGraphicsImageRenderer(size: window.bounds.size)
+            let image = renderer.image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
             XCTAssertEqual(image.size.width, width)
             let path = FileManager.default.temporaryDirectory.appendingPathComponent("achievement-overlay-\(Int(width)).png")
             try XCTUnwrap(image.pngData()).write(to: path)
             print("OVERLAY_PREVIEW: \(path.path)")
+            window.isHidden = true
         }
     }
 }

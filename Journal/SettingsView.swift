@@ -204,6 +204,21 @@ struct SettingsView: View {
 
                     // MARK: About
                     SettingsSection(title: "About", icon: "info.circle.fill", iconColor: .secondary) {
+                        if let privacyURL = URL(string: "https://moody-journal.github.io/privacy.html") {
+                            Link(destination: privacyURL) {
+                                HStack(spacing: 14) {
+                                    SettingsIcon(symbol: "hand.raised.fill", color: .indigo)
+                                    Text("Privacy Policy")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: "arrow.up.right")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(14)
+                            }
+                            SettingsDivider()
+                        }
                         SettingsActionRow(
                             icon: "heart.fill",
                             iconColor: .pink,
@@ -255,7 +270,7 @@ struct SettingsView: View {
                         Text("Please enable notifications in Settings to use the streak reminder.")
                     }
 
-                    Text("Made with ♥ · Journal entries and AI analysis stay on your device")
+                    Text("Journal entries and AI analysis stay on your device")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 32)
