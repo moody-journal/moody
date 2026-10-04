@@ -1,10 +1,12 @@
 import SwiftUI
 import UserNotifications
 import SwiftData
+import StoreKit
 
 // MARK: - Settings View
 
 struct SettingsView: View {
+    @Environment(\.requestReview) private var requestReview
 
     @State private var operationError: String?
     // MARK: – Persisted Preferences
@@ -202,6 +204,13 @@ struct SettingsView: View {
 
                     // MARK: About
                     SettingsSection(title: "About", icon: "info.circle.fill", iconColor: .secondary) {
+                        SettingsActionRow(
+                            icon: "heart.fill",
+                            iconColor: .pink,
+                            title: "Rate the App",
+                            subtitle: "Leave a review on the App Store"
+                        ) { requestReview() }
+                        SettingsDivider()
                         HStack(spacing: 14) {
                             SettingsIcon(symbol: "tag.fill", color: .secondary)
                             VStack(alignment: .leading, spacing: 2) {

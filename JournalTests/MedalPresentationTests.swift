@@ -6,6 +6,19 @@ import SwiftUI
 
 @MainActor
 final class MedalPresentationTests: XCTestCase {
+    func testCarouselKeepsCenterLargestAndScalesBothSidesSmoothly() {
+        for width: CGFloat in [320, 393, 768] {
+            let center = width / 2
+            XCTAssertEqual(MedalCarouselLayout.scale(center: center, viewportWidth: width), 1)
+            let near = MedalCarouselLayout.scale(center: center + width * 0.1, viewportWidth: width)
+            let far = MedalCarouselLayout.scale(center: center + width * 0.4, viewportWidth: width)
+            XCTAssertGreaterThan(near, far)
+            XCTAssertLessThan(near, 1)
+            XCTAssertEqual(far, MedalCarouselLayout.scale(center: center - width * 0.4, viewportWidth: width), accuracy: 0.0001)
+            XCTAssertGreaterThanOrEqual(MedalCarouselLayout.scale(center: width * 4, viewportWidth: width), 0.64)
+        }
+    }
+
     func testAllThirtySixUSDZMedalsResolveAndLoad() throws {
         let names = ["Autocorrect Disaster Badge", "Blew Up A Microwave Badge", "Breakfast Pizza Badge", "Comfort Zone Badge", "Created Something Badge", "Cried It Out Badge", "Disconnected From Screens Badge", "Doomscrolled Badge", "Dropped Phone On Face Badge", "Fed Curiosity Badge", "Finished Tasks Badge", "Forgave Yourself Badge", "Goal Achieved Badge", "Guessed The Time Correctly Badge", "Helped Others Badge", "Heroic Napper Badge", "Kept Going Badge", "Lost A Sock Badge", "Made Amends Badge", "Made Connections Badge", "Mindfulness Badge", "New Beginnings Badge", "Nourished Yourself Badge", "Overcoming Difficulty Badge", "Reached Out Badge", "Reached Out First Badge", "Remembered A Dream", "Rest Well Badge", "Said No Badge", "Sang In The Shower Badge", "Sat With Uncertainty Badge", "Set Boundaries Badge", "Showed Up For Yourself Badge", "Slept Without Guilt Badge", "Stayed Active Badge", "Touched Grass Badge"]
         XCTAssertEqual(names.count, AwardType.allCases.count)

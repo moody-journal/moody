@@ -78,8 +78,7 @@ struct JournalTab: View {
     @State private var showNewEntry         = false
     @State private var entryPendingDeletion: JournalEntry?
     @State private var showStatsAndSearch   = false
-    @State private var pendingAwards:  [Award] = []
-    @State private var currentAward:   Award?  = nil
+    @State private var presentedAwards: [Award] = []
 
     private var streakCount: Int {
         var streak = 0
@@ -201,20 +200,17 @@ struct JournalTab: View {
                     Task {
                         await viewModel.analyseEntry(savedEntry, using: context)
                         guard savedEntry.modelContext != nil, !savedEntry.isDeleted else { return }
-                        pendingAwards.append(contentsOf: savedEntry.awards)
-                        if currentAward == nil { showNextMedal() }
+                        presentedAwards.append(contentsOf: savedEntry.awards)
                     }
                 }
             }
             .overlay {
-                if let award = currentAward {
-                    MedalPresentationView(award: award, hasMoreMedals: !pendingAwards.isEmpty) {
-                        withAnimation(.easeOut(duration: 0.3)) { currentAward = nil }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showNextMedal() }
+                if !presentedAwards.isEmpty {
+                    MedalPresentationView(awards: presentedAwards) {
+                        withAnimation(.easeOut(duration: 0.3)) { presentedAwards = [] }
                     }
-                    .id(award.id)
                     .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8).combined(with: .opacity),
+                        insertion: .opacity,
                         removal: .opacity.combined(with: .move(edge: .bottom))
                     ))
                     .zIndex(100)
@@ -240,13 +236,8 @@ struct JournalTab: View {
                 set: { if !$0 { viewModel.errorMessage = nil } }
             )) { Button("OK") { viewModel.errorMessage = nil } }
             message: { Text(viewModel.errorMessage ?? "") }
-            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: currentAward?.id)
+            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: presentedAwards.isEmpty)
         }
-    }
-
-    private func showNextMedal() {
-        guard !pendingAwards.isEmpty else { return }
-        currentAward = pendingAwards.removeFirst()
     }
 
     private func deleteEntry(_ entry: JournalEntry) {

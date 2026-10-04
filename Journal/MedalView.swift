@@ -131,305 +131,141 @@ enum MedalShape: CaseIterable {
 // MARK: - Medal Presentation (Premium)
 
 struct MedalPresentationView: View {
-    let award: Award
-    var hasMoreMedals = false
-    var onDismiss: (() -> Void)? = nil
+    let awards: [Award]
+    var onDismiss: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var selectedID: UUID?
+    @State private var arrived = false
+    @State private var showCollection = false
+    @State private var started = false
+    @State private var isClosing = false
+    @State private var sound = MedalSoundPlayer()
 
-    @State private var bgOpacity:      Double  = 0
-    @State private var vignetteScale:  CGFloat = 1.4
+    init(awards: [Award], onDismiss: (() -> Void)? = nil) {
+        self.awards = awards
+        self.onDismiss = onDismiss
+        _selectedID = State(initialValue: awards.first?.id)
+    }
 
-    @State private var haloOpacity:    Double  = 0
-    @State private var haloPulse:      CGFloat = 1.0
-    @State private var haloRotation:   Double  = 0
+    init(award: Award, onDismiss: (() -> Void)? = nil) {
+        self.init(awards: [award], onDismiss: onDismiss)
+    }
 
-    @State private var medalOpacity:   Double  = 0
-    @State private var medalScale:     CGFloat = 0.60
-    @State private var medalElevation: CGFloat = 0
-
-    @State private var dustOpacity:    Double  = 0
-    @State private var dustTick:       Int     = 0
-    @State private var dustTimer:      Timer?  = nil
-
-    @State private var labelOpacity:   Double  = 0
-
-    @State private var tapCueOpacity:  Double  = 0
-
-    @State private var sceneReady:    Bool      = false
-    @State private var medalShape:    MedalShape = .circle
-
-    @State private var hasStarted:    Bool              = false
-    @State private var dismissTask:   Task<Void, Never>? = nil
-
-    private let autoDismissDelay: TimeInterval = 9
-
-    private var ambientHue: Double {
-        switch award.type {
-        case .connectedWithSomeone, .helpedOthers, .madeAmends:
-            return 0.13
-        case .prioritisedSleep, .movedYourBody, .ateWell, .practicedMindfulness:
-            return 0.55
-        case .learnedSomethingNew, .steppedOutsideComfort, .askedForHelp:
-            return 0.60
-        case .keptGoing, .handledDifficulty, .setABoundary:
-            return 0.72
-        case .finishedSomething, .beganSomething, .showedUpForYourself:
-            return 0.08
-        case .reachedOutFirst:      return 0.20
-        case .restedWithoutGuilt:   return 0.9
-        case .spentTimeInNature:    return 0.28
-        case .disconnectedFromScreens: return 0.45
-        case .satWithUncertainty:   return 0.33
-        case .createdSomething:     return 0.85
-        case .saidNo:               return 0.88
-        case .celebratedAWin:       return 0.18
-        case .forgivingYourself:    return 0.92
-        case .criedItOut:           return 0.03
-        case .blewUpMicrowave:      return 0.05
-        case .sangInTheShower:      return 0.55
-        case .heroicNapper:         return 0.70
-        case .doomScrolled:         return 0.75
-        case .lostASock:            return 0.10
-        case .breakfastPizza:       return 0.07
-        case .autocorrectDisaster:  return 0.88
-        case .rememberedADream:     return 0.72
-        case .guessedTimeCorrectly: return 0.45
-        case .droppedPhoneOnFace:   return 0.03
-        }
+    private var selectedAward: Award? {
+        awards.first(where: { $0.id == selectedID }) ?? awards.first
     }
 
     var body: some View {
         ZStack {
-
-            Color(red: 0.01, green: 0.01, blue: 0.04)
-                .opacity(bgOpacity)
+            Color(red: 0.01, green: 0.01, blue: 0.04).ignoresSafeArea()
+            RadialGradient(colors: [.indigo.opacity(0.28), .clear], center: .center,
+                           startRadius: 20, endRadius: 340)
                 .ignoresSafeArea()
-                .onTapGesture { dismiss() }
-
-            RadialGradient(
-                colors: [.clear, Color.black.opacity(0.70)],
-                center: .center,
-                startRadius: 140,
-                endRadius: 420
-            )
-            .opacity(bgOpacity * 0.85)
-            .scaleEffect(vignetteScale)
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            if dustOpacity > 0 {
-                GoldDustView(tick: dustTick, hue: ambientHue)
-                    .opacity(dustOpacity)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-            }
-
-            VStack(spacing: 0) {
-                Spacer()
-
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color(hue: ambientHue, saturation: 0.75,
-                                          brightness: 0.65, opacity: 0.28),
-                                    Color(hue: ambientHue, saturation: 0.60,
-                                          brightness: 0.40, opacity: 0.0)
-                                ],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 220
-                            )
-                        )
-                        .frame(width: 440, height: 440)
-                        .scaleEffect(haloPulse)
-                        .opacity(haloOpacity)
-                        .blendMode(.screen)
-                        .rotationEffect(.degrees(haloRotation))
-                        .allowsHitTesting(false)
-
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color(hue: ambientHue, saturation: 0.50,
-                                          brightness: 0.90, opacity: 0.22),
-                                    Color.clear
-                                ],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 110
-                            )
-                        )
-                        .frame(width: 220, height: 220)
-                        .opacity(haloOpacity)
-                        .blendMode(.screen)
-                        .allowsHitTesting(false)
-
-                    Medal3DSceneView(
-                        awardType: award.type,
-                        medalShape: medalShape,
-                        triggerSpinIn: sceneReady
-                    )
-                    .id(award.id)
-                    .frame(width: 240, height: 240)
-                    .scaleEffect(medalScale)
-                    .offset(y: medalElevation)
-                    .opacity(medalOpacity)
+            VStack(spacing: 16) {
+                HStack {
+                    Text(awards.count == 1 ? "A little win, just for you" : "Your moments worth celebrating")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                    Spacer()
+                    Button(action: finish) {
+                        Image(systemName: "xmark.circle.fill").font(.title2)
+                    }
+                    .accessibilityLabel("Close medals")
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
 
-                HStack(spacing: 6) {
-                    Image(systemName: "hand.tap")
-                        .font(.system(size: 13))
-                    Text(hasMoreMedals ? "Tap to reveal your next medal" : "Tap anywhere to continue")
-                        .font(.system(.caption2, design: .rounded))
-                        .fontWeight(.medium)
+                Spacer(minLength: 0)
+                GeometryReader { geometry in
+                    let width = geometry.size.width
+                    let itemWidth = min(240.0, width * 0.64)
+                    ScrollView(.horizontal) {
+                        LazyHStack(spacing: 12) {
+                            ForEach(awards, id: \.id) { award in
+                                Medal3DSceneView(awardType: award.type,
+                                    medalShape: .deterministic(for: award.type), triggerSpinIn: false)
+                                    .allowsHitTesting(false)
+                                    .frame(width: itemWidth, height: 270)
+                                    .visualEffect { content, proxy in
+                                        content.scaleEffect(MedalCarouselLayout.scale(
+                                            center: proxy.frame(in: .scrollView(axis: .horizontal)).midX,
+                                            viewportWidth: width))
+                                    }
+                                    .opacity(award.id == awards.first?.id ? (arrived ? 1 : 0) : (showCollection ? 1 : 0))
+                                    .offset(y: award.id == awards.first?.id && !arrived && !reduceMotion ? geometry.size.height + 100 : 0)
+                                    .id(award.id)
+                                    .accessibilityLabel(award.displayTitle)
+                            }
+                        }
+                        .scrollTargetLayout()
+                    }
+                    .contentMargins(.horizontal, (width - itemWidth) / 2, for: .scrollContent)
+                    .scrollIndicators(.hidden)
+                    .scrollTargetBehavior(.viewAligned)
+                    .scrollPosition(id: $selectedID)
+                    .scrollDisabled(!showCollection || awards.count < 2)
+                    .scrollClipDisabled()
                 }
-                .foregroundStyle(.white.opacity(0.28))
-                .padding(.top, 28)
-                .opacity(tapCueOpacity)
+                .frame(height: 280)
 
-                PremiumLabelCard(award: award)
-                    .padding(.top, 48)
-                    .padding(.horizontal, 32)
-                    .opacity(labelOpacity)
-
-                Spacer().frame(height: 128)
+                if let award = selectedAward {
+                    ScrollView {
+                        PremiumLabelCard(award: award)
+                            .padding(.horizontal, 24)
+                    }
+                    .frame(maxHeight: 200)
+                    .opacity(arrived ? 1 : 0)
+                }
+                if awards.count > 1 {
+                    Text("\((awards.firstIndex(where: { $0.id == selectedID }) ?? 0) + 1) of \(awards.count) · Swipe to explore")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.65))
+                        .opacity(showCollection ? 1 : 0)
+                }
+                Spacer(minLength: 0)
+                Button("Keep journaling", action: finish)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.indigo)
+                    .padding(.bottom, 24)
             }
         }
-        .onAppear {
-            guard !hasStarted else { return }
-            hasStarted = true
-            runEntrance()
+        .preferredColorScheme(.dark)
+        .task {
+            guard !started else { return }
+            started = true
+            sound.prepare()
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+                guard !Task.isCancelled, !isClosing else { return }
+                if scenePhase == .active { sound.playChime() }
+                withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.75, dampingFraction: 0.82)) {
+                    arrived = true
+                }
+                try await Task.sleep(for: .milliseconds(reduceMotion ? 200 : 900))
+                guard !Task.isCancelled, !isClosing else { return }
+                withAnimation(.easeIn(duration: 0.45)) { showCollection = true }
+            } catch { /* View dismissal cancels the entrance sequence. */ }
         }
-        .onDisappear {
-            stopDustTimer()
-            MedalSoundPlayer.shared.stop()
-        }
-    }
-
-    // MARK: - Entrance sequence
-
-    private func runEntrance() {
-        medalShape = MedalShape.deterministic(for: award.type)
-        MedalSoundPlayer.shared.playChime()
-
-        withAnimation(.easeIn(duration: 0.6)) {
-            bgOpacity     = 1
-            vignetteScale = 1.0
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            sceneReady = true
-        }
-
-        withAnimation(.easeIn(duration: 0.35).delay(0.30)) {
-            medalOpacity = 1
-        }
-        withAnimation(
-            .spring(response: 0.80, dampingFraction: 0.62).delay(0.30)
-        ) {
-            medalScale = 1.0
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.70) {
-            let gen = UIImpactFeedbackGenerator(style: .medium)
-            gen.impactOccurred(intensity: 0.85)
-        }
-
-        withAnimation(.easeOut(duration: 1.1).delay(0.80)) {
-            haloOpacity = 1
-        }
-        withAnimation(
-            .easeInOut(duration: 3.2)
-            .repeatForever(autoreverses: true)
-            .delay(1.2)
-        ) {
-            haloPulse = 1.12
-        }
-        withAnimation(
-            .linear(duration: 28)
-            .repeatForever(autoreverses: false)
-            .delay(0.8)
-        ) {
-            haloRotation = 360
-        }
-
-        withAnimation(
-            .easeInOut(duration: 2.8)
-            .repeatForever(autoreverses: true)
-            .delay(0.90)
-        ) {
-            medalElevation = -10
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            withAnimation(.easeOut(duration: 0.5)) { dustOpacity = 1 }
-            startDustTimer()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.5) {
-            withAnimation(.easeIn(duration: 2.0)) { dustOpacity = 0.18 }
-        }
-
-        withAnimation(.easeOut(duration: 0.9).delay(1.10)) {
-            labelOpacity = 1
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            let gen = UIImpactFeedbackGenerator(style: .light)
-            gen.impactOccurred(intensity: 0.5)
-        }
-
-        withAnimation(.easeIn(duration: 1.2).delay(4.0)) {
-            tapCueOpacity = 1
-        }
-
-        dismissTask = Task {
-            try? await Task.sleep(for: .seconds(autoDismissDelay))
-            guard !Task.isCancelled else { return }
-            await MainActor.run { dismiss() }
+        .onDisappear { sound.stop() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { sound.stop() }
         }
     }
 
-    // MARK: - Gold dust timer
-
-    private func startDustTimer() {
-        dustTimer?.invalidate()
-        dustTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0,
-                                         repeats: true) { _ in
-            dustTick += 1
-        }
+    private func finish() {
+        guard !isClosing else { return }
+        isClosing = true
+        sound.stop()
+        onDismiss?()
     }
+}
 
-    private func stopDustTimer() {
-        dustTimer?.invalidate()
-        dustTimer = nil
-    }
-
-    // MARK: - Dismiss
-
-    private func dismiss() {
-        dismissTask?.cancel()
-        dismissTask = nil
-        stopDustTimer()
-
-        withAnimation(.easeInOut(duration: 0.45)) {
-            bgOpacity     = 0
-            labelOpacity  = 0
-            haloOpacity   = 0
-            tapCueOpacity = 0
-        }
-        withAnimation(.easeIn(duration: 0.30)) {
-            medalOpacity = 0
-            medalScale   = 1.08
-        }
-        withAnimation(.easeIn(duration: 0.60)) {
-            dustOpacity = 0
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.50) {
-            onDismiss?()
-        }
+enum MedalCarouselLayout {
+    nonisolated static func scale(center: CGFloat, viewportWidth: CGFloat) -> CGFloat {
+        guard viewportWidth > 0 else { return 1 }
+        let distance = abs(center - viewportWidth / 2)
+        return max(0.64, 1 - distance / viewportWidth * 0.7)
     }
 }
 
@@ -981,25 +817,29 @@ struct Medal3DSceneView: UIViewRepresentable {
 
 @MainActor
 final class MedalSoundPlayer {
-    static let shared = MedalSoundPlayer()
     private var player: AVAudioPlayer?
-    private init() {}
+    private var didPlay = false
 
-    func playChime() {
-        stop()
-        guard let url = Bundle.main.url(forResource: "MedalChime", withExtension: "wav") else { return }
+    func prepare() {
+        guard player == nil, !didPlay,
+              let url = Bundle.main.url(forResource: "MedalChime", withExtension: "wav") else { return }
         do {
-            // A short, pre-rendered stereo chime avoids synthesising audio during the medal animation.
             try AVAudioSession.sharedInstance().setCategory(.ambient, options: .mixWithOthers)
-            try AVAudioSession.sharedInstance().setActive(true)
             let chime = try AVAudioPlayer(contentsOf: url)
             chime.volume = 0.65
             chime.prepareToPlay()
-            if chime.play() { player = chime }
-        } catch {
-            // The visual celebration still works when audio is unavailable or interrupted.
-            player = nil
-        }
+            player = chime
+        } catch { player = nil }
+    }
+
+    /// One chime belongs to one presentation, never to a scrolling medal cell.
+    func playChime() {
+        guard !didPlay else { return }
+        didPlay = true
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            player?.play()
+        } catch { player = nil }
     }
 
     func stop() { player?.stop(); player = nil }
