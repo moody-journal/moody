@@ -832,6 +832,7 @@ final class MedalSoundPlayer {
         } catch { player = nil }
     }
 
+    /// One chime belongs to one presentation, never to a scrolling medal cell.
     func playChime() {
         guard !didPlay else { return }
         didPlay = true
